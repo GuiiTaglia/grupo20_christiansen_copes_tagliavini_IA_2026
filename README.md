@@ -1,0 +1,1 @@
+# grupo20_christiansen_copes_tagliavini_IA_2026
