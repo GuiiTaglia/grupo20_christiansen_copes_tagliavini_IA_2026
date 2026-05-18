@@ -38,6 +38,7 @@ TALADROS = {
 }
 BATERIA_MAX = 20
 CANT_MAX_MUESTRAS = 2
+MAPA= (5, 5)  
 DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # derecha, abajo, izquierda, arriba
 class Entrega1Problem(SearchProblem):
 
@@ -57,6 +58,9 @@ class Entrega1Problem(SearchProblem):
             muestras_restantes=muestras,
         )
         super().__init__(estado_inicial)
+#valida que la posicion este dentro del mapa
+    def es_posicion_valida(self, pos):
+        return 0 <= pos[0] < MAPA[0] and 0 <= pos[1] < MAPA[1]
 
 # De ayuda para saber que tipo de muestra hay en la posiciona actual del rover
     def muestra_en_posicion(self, pos, muestras_restantes):
@@ -71,13 +75,15 @@ class Entrega1Problem(SearchProblem):
         if state.bateria - BATERIA["moverse"] > 0:
             for dx, dy in DIRECCIONES:
                 destino = (state.pos[0] + dx, state.pos[1] + dy)
-                acciones_validas.append(('moverse', destino))
+                if self.es_posicion_valida(destino):
+                    acciones_validas.append(('moverse', destino))
         
         #sobremarcha
         if state.bateria - BATERIA["sobremarcha"] > 0:
             for dx, dy in DIRECCIONES:
                 destino = (state.pos[0] + 2*dx, state.pos[1] + 2*dy)
-                acciones_validas.append(('sobremarcha', destino))
+                if self.es_posicion_valida(destino):
+                    acciones_validas.append(('sobremarcha', destino))
         
         #equipar taladro
         if state.bateria - BATERIA["equipar"] > 0:
