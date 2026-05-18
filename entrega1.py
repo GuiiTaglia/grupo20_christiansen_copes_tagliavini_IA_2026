@@ -138,10 +138,7 @@ class Entrega1Problem(SearchProblem):
             return state._replace(
                 bateria=state.bateria - BATERIA["recolectar"],
                 carga=state.carga + (parametro,),
-                muestras_restantes=frozenset(
-                    m for m in state.muestras_restantes
-                    if m != (state.pos, parametro)
-                ),
+                muestras_restantes=state.muestras_restantes - {(state.pos, parametro)},
             )
 
         elif tipo_accion == "depositar":
