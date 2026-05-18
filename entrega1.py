@@ -1,7 +1,8 @@
 from simpleai.search import (
     SearchProblem,
     greedy,
-    astar
+    astar,
+    uniform_cost
 )
 from collections import namedtuple
 from typing import Tuple, FrozenSet, Optional
@@ -18,9 +19,9 @@ EstadoRover = namedtuple('EstadoRover', [
 TIEMPO = {
     "moverse": 1,
     "sobremarcha": 1,
-    "equipar": 1,
+    "equipar": 3,
     "recolectar": 2,
-    "depositar": 1,  # por muestra depositada
+    "depositar": 1, 
     "recargar": 4,
 }
 
@@ -29,25 +30,25 @@ BATERIA = {
     "sobremarcha": 4,
     "equipar": 1,
     "recolectar": 3,
-    "depositar": 1,  # por muestra depositada
-    "recargar": 20,
+    "depositar": 1,  
+    "recargar": 10,
 }
 TALADROS = {
-    "igneas": "termico",
-    "sedimentarias": "percusion"
+    "ignea": "termico",
+    "sedimentaria": "percusion"
 }
 BATERIA_MAX = 20
 CANT_MAX_MUESTRAS = 2
-MAPA= (5, 5)  
-DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # derecha, abajo, izquierda, arriba
+MAPA_LIM = 30
+DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  
 class Entrega1Problem(SearchProblem):
 
     def __init__(self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
         self.zonas_sombra = set(zonas_sombra)
         
         muestras = frozenset (
-            [(pos, 'igneas') for pos in muestras_igneas] + 
-            [(pos, 'sedimentarias') for pos in muestras_sedimentarias]
+            [(pos, 'ignea') for pos in muestras_igneas] + 
+            [(pos, 'sedimentaria') for pos in muestras_sedimentarias]
         )
 
         estado_inicial = EstadoRover(
@@ -58,9 +59,12 @@ class Entrega1Problem(SearchProblem):
             muestras_restantes=muestras,
         )
         super().__init__(estado_inicial)
-#valida que la posicion este dentro del mapa
+    #de ayuda para calcular la distancia entre dos puntos
+    def distancia_manhattan(self, pos1, pos2):
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+    #de ayuda para validar que el rover no se salga del mapa
     def es_posicion_valida(self, pos):
-        return 0 <= pos[0] < MAPA[0] and 0 <= pos[1] < MAPA[1]
+        return -MAPA_LIM <= pos[0] <= MAPA_LIM and -MAPA_LIM <= pos[1] <= MAPA_LIM
 
 # De ayuda para saber que tipo de muestra hay en la posiciona actual del rover
     def muestra_en_posicion(self, pos, muestras_restantes):
@@ -71,6 +75,7 @@ class Entrega1Problem(SearchProblem):
 
     def actions(self, state):
         acciones_validas = []
+       
         #moverse
         if state.bateria - BATERIA["moverse"] > 0:
             for dx, dy in DIRECCIONES:
@@ -87,9 +92,9 @@ class Entrega1Problem(SearchProblem):
         
         #equipar taladro
         if state.bateria - BATERIA["equipar"] > 0:
-            for tipo in TALADROS.keys():
-                if tipo != state.taladro_equipado:
-                    acciones_validas.append(('equipar', tipo))
+            for taladro in TALADROS.values():
+                if taladro != state.taladro_equipado:
+                    acciones_validas.append(('equipar', taladro))
      
         #recolectar
         tipo_muestra = self.muestra_en_posicion(state.pos, state.muestras_restantes)
@@ -104,7 +109,7 @@ class Entrega1Problem(SearchProblem):
         #depositar
         es_ultima = (len(state.muestras_restantes) == 0 and len(state.carga) > 0)
         puede_depositar = len(state.carga) == CANT_MAX_MUESTRAS or es_ultima
-        if puede_depositar and state.bateria - BATERIA["depositar"] * len(state.carga) > 0:
+        if puede_depositar and state.bateria - BATERIA["depositar"] > 0:
             acciones_validas.append(('depositar', None))
         
         #recargar
@@ -143,7 +148,7 @@ class Entrega1Problem(SearchProblem):
 
         elif tipo_accion == "depositar":
             return state._replace(
-                bateria=state.bateria - BATERIA["depositar"] * len(state.carga),
+                bateria=state.bateria - BATERIA["depositar"],
                 carga=(),
             )
 
@@ -156,10 +161,36 @@ class Entrega1Problem(SearchProblem):
         return len(state.muestras_restantes) == 0 and len(state.carga) == 0
 
     def heuristic(self, state):
-        return super().heuristic(state)
-        #heuristica: 2*muestras en mapa + cambios mínimos taladro * 3 + distancia de manhattan/2 + (cant muestras faltantes + cant muestras cargadas)/2 
-    def cost(self, state, action, state2): 
-        return super().cost(state, action, state2)        
+        if not state.muestras_restantes and not state.carga:
+            return 0
+        #por cada muestra restante, asume costo 3 por recolectar y depositar (2 y 1 respectivamente)
+        h1 = len(state.muestras_restantes) * 3
+
+        h_carga = 1 if state.carga else 0  #si ya tiene muestras cargadas, en algun momento las tendra que depositar, asume costo 1
+
+        #si el taladro equipado no sirve, cambiarlo cuesta 3, sino no hay costo adicional
+        if state.muestras_restantes:
+            taladros_requeridos = set(TALADROS[tipo] for _, tipo in state.muestras_restantes)
+            if state.taladro_equipado not in taladros_requeridos:
+                h2 = TIEMPO["equipar"]
+            else:
+                h2 = 0
+
+        #minimo de movimientos para recolectar la muestra mas cercana 
+        if state.muestras_restantes:
+            h3 = min(self.distancia_manhattan(state.pos, pos) for pos, _ in state.muestras_restantes)
+        else:
+            h3 = 0 
+        return h1 + h_carga + h2 + h3
+    
+    def cost(self, state, action, state2):
+        tipo_accion, parametro = action
+        costo_base = TIEMPO[tipo_accion]
+
+        if tipo_accion == "depositar":
+            return costo_base * len(state.carga)
+        else:
+            return costo_base        
     
     
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
@@ -174,4 +205,4 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
     resultado= astar(problema, graph_search=True)
     if resultado is None:
         return "No se encontró una solución"    
-    return [accion for accion, _ in resultado.path()]
+    return [accion for accion, _ in resultado.path() if accion is not None]
