@@ -171,16 +171,4 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
     resultado= astar(problema, graph_search=True)
     if resultado is None:
         return "No se encontró una solución"    
-    
     return [accion for accion, _ in resultado.path()]
-
-if __name__ == "__main__":    
-    rover_inicio = (0, 0)
-    bateria_inicial = 20
-    zonas_sombra = [(1, 1), (2, 2)]
-    muestras_igneas = [(3, 3), (4, 4)]
-    muestras_sedimentarias = [(5, 5), (6, 6)]
-    resultado = planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias)
-    print("Plan de acciones para el rover:")
-    print(resultado)
-    
