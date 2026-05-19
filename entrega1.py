@@ -12,7 +12,7 @@ EstadoRover = namedtuple('EstadoRover', [
     'carga', 
     'muestras_restantes'
     ])
-#PREGUNTAR POR EL USO DE NAMEDTUPLE, PERO PARA MI ES MAS FACIL DE MANEJAR
+#PREGUNTAR POR EL USO DE NAMEDTUPLE, PERO PARA MI ES MAS FACIL DE MANEJAR (nos permite hacer .pos, .bateria, etc en vez de usar indices)
 
 TIEMPO = {
     "moverse": 1,
