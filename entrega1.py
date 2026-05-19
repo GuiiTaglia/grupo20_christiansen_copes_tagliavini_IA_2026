@@ -4,6 +4,7 @@ from simpleai.search import (
     astar,
     uniform_cost
 )
+import math
 from collections import namedtuple
 from typing import Tuple, FrozenSet, Optional
 
@@ -39,8 +40,7 @@ TALADROS = {
 }
 BATERIA_MAX = 20
 CANT_MAX_MUESTRAS = 2
-MAPA_FIL = 30
-MAPA_COL = 30
+MAPA_LIM=30
 DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  
 class Entrega1Problem(SearchProblem):
 
@@ -65,7 +65,7 @@ class Entrega1Problem(SearchProblem):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 #de ayuda para validar que el rover no se salga del mapa
     def es_posicion_valida(self, pos):
-        return 0 <= pos[0] < MAPA_FIL and 0 <= pos[1] < MAPA_COL
+        return -MAPA_LIM <= pos[0] <= MAPA_LIM and -MAPA_LIM <= pos[1] <= MAPA_LIM
 
 # De ayuda para saber que tipo de muestra hay en la posiciona actual del rover
     def muestra_en_posicion(self, pos, muestras_restantes):
@@ -176,9 +176,9 @@ class Entrega1Problem(SearchProblem):
             if state.taladro_equipado not in taladros_requeridos:
                 h2 = TIEMPO["equipar"]
 
-        #minimo de movimientos para recolectar la muestra mas cercana 
+        #minimo de movimientos para recolectar la muestra mas cercana
         if state.muestras_restantes:
-            h3 = min(self.distancia_manhattan(state.pos, pos) for pos, _ in state.muestras_restantes)
+            h3 = min(math.ceil(self.distancia_manhattan(state.pos, pos) / 2) for pos, _ in state.muestras_restantes)
         else:
             h3 = 0 
         return h1 + h_carga + h2 + h3
