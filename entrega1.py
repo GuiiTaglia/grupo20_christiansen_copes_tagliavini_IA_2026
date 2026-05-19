@@ -12,7 +12,7 @@ EstadoRover = namedtuple('EstadoRover', [
     'carga', 
     'muestras_restantes'
     ])
-
+#PREGUNTAR POR EL USO DE NAMEDTUPLE, PERO PARA MI ES MAS FACIL DE MANEJAR
 
 TIEMPO = {
     "moverse": 1,
@@ -41,7 +41,7 @@ MAPA_LIM=30 #PREGUNTAR, pero lo suponemos por los test que se dieron.
 DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  
 class Entrega1Problem(SearchProblem):
 
-    def __init__(self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
+    def __init__(self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias): #PREGUNTAR si esta bien para inicializar los datos del problema, es como tener un punto de partida
         self.zonas_sombra = set(zonas_sombra)
         
         muestras = frozenset (
