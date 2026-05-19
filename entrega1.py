@@ -1,12 +1,9 @@
 from simpleai.search import (
     SearchProblem,
-    greedy,
     astar,
-    uniform_cost
 )
 import math
 from collections import namedtuple
-from typing import Tuple, FrozenSet, Optional
 
 EstadoRover = namedtuple('EstadoRover', [
     'pos', 
@@ -60,14 +57,30 @@ class Entrega1Problem(SearchProblem):
             muestras_restantes=muestras,
         )
         super().__init__(estado_inicial)
+    
+#de ayuda para la heuristica, calcular el tiempo minimo de viaje
+    def min_tiempo_viaje(self, distancia, bateria):
+        if distancia == 0:
+            return 0
+        mejor = float('inf') 
+        for k in range(distancia // 2 + 1):  # k = cantidad de sobremarcha
+            pasos_normales = distancia - 2 * k
+            bateria_necesaria = 4 * k + pasos_normales + 1  # +1 para nunca llegar a 0
+            deficit = max(0, bateria_necesaria - bateria)
+            recargas = math.ceil(deficit / 10) if deficit > 0 else 0
+            tiempo = k + pasos_normales + recargas * TIEMPO["recargar"]
+            mejor = min(mejor, tiempo)
+        return mejor
+
 #de ayuda para calcular la distancia entre dos puntos
     def distancia_manhattan(self, pos1, pos2):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
 #de ayuda para validar que el rover no se salga del mapa
     def es_posicion_valida(self, pos):
         return -MAPA_LIM <= pos[0] <= MAPA_LIM and -MAPA_LIM <= pos[1] <= MAPA_LIM
 
-# De ayuda para saber que tipo de muestra hay en la posiciona actual del rover
+#de ayuda para saber que tipo de muestra hay en la posiciona actual del rover
     def muestra_en_posicion(self, pos, muestras_restantes):
         for pos_m, tipo in muestras_restantes:
             if pos_m == pos:
@@ -165,23 +178,21 @@ class Entrega1Problem(SearchProblem):
         if not state.muestras_restantes and not state.carga:
             return 0
         #por cada muestra restante, asume costo 3 por recolectar y depositar (2 y 1 respectivamente)
-        h1 = len(state.muestras_restantes) * 3
+        h1 = len(state.muestras_restantes) * TIEMPO["recolectar"] * TIEMPO["depositar"]
 
         h_carga = 1 if state.carga else 0  #si ya tiene muestras cargadas, en algun momento las tendra que depositar, asume costo 1
 
-        h2 = 0
-        #si el taladro equipado no sirve, cambiarlo cuesta 3, sino no hay costo adicional
-        if state.muestras_restantes:
+        h2 = 0 #si el taladro equipado no sirve, cambiarlo cuesta 3, sino no hay costo adicional
+        if state.muestras_restantes: #se fija si el taladro que tenemos sirve para alguna de las muestras restantes
             taladros_requeridos = set(TALADROS[tipo] for _, tipo in state.muestras_restantes)
+            min_dist = min(self.distancia_manhattan(state.pos, pos) for pos, _ in state.muestras_restantes)
+            h3= self.min_tiempo_viaje(min_dist, state.bateria) #esto es el tiempo minimo de viaje para llegar a la muestra mas cercana, teniendo en cuenta la bateria disponible y la posibilidad de recargar en el camino
             if state.taladro_equipado not in taladros_requeridos:
                 h2 = TIEMPO["equipar"]
-
-        #minimo de movimientos para recolectar la muestra mas cercana
-        if state.muestras_restantes:
-            h3 = min(math.ceil(self.distancia_manhattan(state.pos, pos) / 2) for pos, _ in state.muestras_restantes)
         else:
-            h3 = 0 
-        return h1 + h_carga + h2 + h3
+            h3 = 0
+
+        return h1 + h_carga + h2 + h3 
     
     def cost(self, state, action, state2):
         tipo_accion, parametro = action
