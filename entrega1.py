@@ -37,7 +37,7 @@ TALADROS = {
 }
 BATERIA_MAX = 20
 CANT_MAX_MUESTRAS = 2
-MAPA_LIM=30
+MAPA_LIM=30 #PREGUNTAR, pero lo suponemos por los test que se dieron.
 DIRECCIONES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  
 class Entrega1Problem(SearchProblem):
 
@@ -106,9 +106,11 @@ class Entrega1Problem(SearchProblem):
         
         #equipar taladro
         if state.bateria - BATERIA["equipar"] > 0:
-            for taladro in TALADROS.values():
-                if taladro != state.taladro_equipado:
-                    acciones_validas.append(('equipar', taladro))
+            tipo_muestra = self.muestra_en_posicion(state.pos, state.muestras_restantes)
+            if tipo_muestra is not None:
+                taladro_requerido = TALADROS[tipo_muestra]
+                if state.taladro_equipado != taladro_requerido: 
+                    acciones_validas.append(('equipar', taladro_requerido))
      
         #recolectar
         tipo_muestra = self.muestra_en_posicion(state.pos, state.muestras_restantes)
@@ -154,9 +156,10 @@ class Entrega1Problem(SearchProblem):
             )
         
         elif tipo_accion == "recolectar":
+            nueva_carga = tuple(sorted(state.carga + (parametro,)))
             return state._replace(
                 bateria=state.bateria - BATERIA["recolectar"],
-                carga=state.carga + (parametro,),
+                carga=nueva_carga,
                 muestras_restantes=state.muestras_restantes - {(state.pos, parametro)},
             )
 
@@ -177,22 +180,33 @@ class Entrega1Problem(SearchProblem):
     def heuristic(self, state):
         if not state.muestras_restantes and not state.carga:
             return 0
-        #por cada muestra restante, asume costo 3 por recolectar y depositar (2 y 1 respectivamente)
-        h1 = len(state.muestras_restantes) * TIEMPO["recolectar"] * TIEMPO["depositar"]
+        n_restantes = len(state.muestras_restantes)
+        n_carga = len(state.carga)
 
-        h_carga = 1 if state.carga else 0  #si ya tiene muestras cargadas, en algun momento las tendra que depositar, asume costo 1
+        # por cada muestra restante, el costo de recolectar + depositar (2 + 1 = 3)
+        h1 = n_restantes * (TIEMPO["recolectar"] + TIEMPO["depositar"])
 
-        h2 = 0 #si el taladro equipado no sirve, cambiarlo cuesta 3, sino no hay costo adicional
-        if state.muestras_restantes: #se fija si el taladro que tenemos sirve para alguna de las muestras restantes
+        # el tiempo (que es 1) por cada muestra cargada que hay que depositar, aunque siempre va a ser uno PREGUNTAR
+        h_carga = n_carga * TIEMPO["depositar"]
+
+        #los cambios necesarios del taladro, pero ahora con el cambio de que solo cambia si esta arriba de la muestra
+        h2 = 0
+        if state.muestras_restantes:
             taladros_requeridos = set(TALADROS[tipo] for _, tipo in state.muestras_restantes)
+            if state.taladro_equipado in taladros_requeridos:
+                cambios = len(taladros_requeridos) - 1
+            else:
+                cambios = len(taladros_requeridos)
+            h2 = cambios * TIEMPO["equipar"]
+
+        # distancia a la muestra más cercana
+        if state.muestras_restantes:
             min_dist = min(self.distancia_manhattan(state.pos, pos) for pos, _ in state.muestras_restantes)
-            h3= self.min_tiempo_viaje(min_dist, state.bateria) #esto es el tiempo minimo de viaje para llegar a la muestra mas cercana, teniendo en cuenta la bateria disponible y la posibilidad de recargar en el camino
-            if state.taladro_equipado not in taladros_requeridos:
-                h2 = TIEMPO["equipar"]
+            h3 = self.min_tiempo_viaje(min_dist, state.bateria)
         else:
             h3 = 0
 
-        return h1 + h_carga + h2 + h3 
+        return h1 + h_carga + h2 + h3
     
     def cost(self, state, action, state2):
         tipo_accion, parametro = action
