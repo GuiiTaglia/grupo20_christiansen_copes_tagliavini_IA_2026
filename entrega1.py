@@ -189,7 +189,7 @@ class Entrega1Problem(SearchProblem):
         # el tiempo (que es 1) por cada muestra cargada que hay que depositar, aunque siempre va a ser uno PREGUNTAR
         h_carga = n_carga * TIEMPO["depositar"]
 
-        #los cambios necesarios del taladro, pero ahora con el cambio de que solo cambia si esta arriba de la muestra
+        #los cambios necesarios del taladro
         h2 = 0
         if state.muestras_restantes:
             taladros_requeridos = set(TALADROS[tipo] for _, tipo in state.muestras_restantes)
