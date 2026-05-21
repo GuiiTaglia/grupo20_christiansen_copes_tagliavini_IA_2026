@@ -186,7 +186,7 @@ class Entrega1Problem(SearchProblem):
         # por cada muestra restante, el costo de recolectar + depositar (2 + 1 = 3)
         h1 = n_restantes * (TIEMPO["recolectar"] + TIEMPO["depositar"])
 
-        # el tiempo (que es 1) por cada muestra cargada que hay que depositar, aunque siempre va a ser uno PREGUNTAR
+        # el tiempo (que es 1) por cada muestra cargada que hay que depositar
         h_carga = n_carga * TIEMPO["depositar"]
 
         #los cambios necesarios del taladro
