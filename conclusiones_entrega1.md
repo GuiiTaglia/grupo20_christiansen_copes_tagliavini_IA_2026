@@ -5,30 +5,22 @@ Para resolver el problema mediante inteligencia artificial utilizamos gemini 3.1
 **Resultados de IA:**
 
 1\.
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.001.png)
-
-2\.
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.002.png)
-
-3\. (no termino como por 10/15 minutos)
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.003.png)
+PASSED
+test_entrega1.py::test_resultado_es_correcto[case8] 
+Resolviendo caso [m3: 1 muestra lejana]
+rover=(0, 0) battery=20 shadows=() igneous=((0, 30),) sediments=()
+...
+Solución obtenida en 909.7 segundos
 
 **Resultados de Nuestra solución:**
 
 1\.
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.004.png)
-
-2\.
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.005.png)
-
-3\.
-
-![](Aspose.Words.2f8ad61a-0d13-4299-8b09-bbdda1066854.006.png)
+PASSED
+test_entrega1.py::test_resultado_es_correcto[case8] 
+Resolviendo caso [m3: 1 muestra lejana]
+rover=(0, 0) battery=20 shadows=() igneous=((0, 30),) sediments=()
+...
+Solución obtenida en 0.3 segundos
 
 Vemos **semejanzas** en el uso de un método constructor para inicializar el estado del rover (def \_\_init\_\_). Utiliza el método A\* para realizar la búsqueda, la función cost es casi igual. La IA tuvo en cuenta que nunca se debe llegar a 0 de batería, por lo que siempre hace las validaciones necesarias para que sea batería > 0 y la función goal, si bien esta escrita en menos lineas de código, cumple la misma función.
 
