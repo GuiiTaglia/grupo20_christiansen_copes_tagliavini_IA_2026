@@ -27,16 +27,13 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
     domains = {v: valid_cells for v in variables}
 
     #Restricciones
-
-    # Auxiliar: Verifica adyacencia ortogonal
+    # Restriccion que verifica adyacencia ortogonal
     def is_adjacent(pos1, pos2):
         r1, c1 = pos1
         r2, c2 = pos2
         return abs(r1 - r2) + abs(c1 - c2) == 1
 
     # 1 Sin superposición
-    #def no_overlap(variables, values):
-    #    return len(set(values)) == len(values)
 
     def no_overlap(variables, values):
         return values[0] != values[1]
@@ -70,7 +67,6 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
             
         for n in neighbors:
             nr, nc = n
-            # Si el vecino está en el mapa, no es cráter y no hay ningún módulo allí
             if (0 <= nr < rows and 0 <= nc < cols and 
                 n not in craters and n not in other_positions):
                 return True
